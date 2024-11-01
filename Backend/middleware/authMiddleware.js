@@ -1,22 +1,36 @@
 // middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Admin = require("../models/Admin"); // Import the Admin model if necessary
 
+// Middleware to protect routes
 exports.protect = async (req, res, next) => {
-  const token = req.headers.authorization.split(" ")[1];
+  let token;
+
+  // Check if authorization header exists
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  // If no token, return unauthorized
+  if (!token) {
+    return res.status(401).json({ message: "Not authorized, no token" });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
+    req.user = await User.findById(decoded.id) || await Admin.findById(decoded.id); // Check both User and Admin
     next();
-  } catch {
-    res.status(401).json({ message: "Not authorized" });
+  } catch (error) {
+    res.status(401).json({ message: "Not authorized, token failed", error: error.message });
   }
 };
 
+// Middleware to check if user is an admin
 exports.isAdmin = (req, res, next) => {
-  if (req.user.role === "admin") {
-    next();
-  } else {
+    // If req.user is an instance of Admin, it's an admin user
+    if (req.user instanceof Admin) {
+      return next();
+    }
     res.status(403).json({ message: "Access denied" });
-  }
-};
+  };
