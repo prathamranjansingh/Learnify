@@ -2,8 +2,8 @@ import React from 'react';
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-muted/50">
-      <div className="container grid gap-8 px-4 py-8 md:grid-cols-4">
+    <footer className="border-t flex justify-center w-[100%]  bg-muted/50">
+      <div className="container grid gap-8 px-4 py-8 grid-cols-4">
         <div>
           <h4 className="mb-4 font-semibold">Browse by subject</h4>
           <ul className="space-y-2 text-sm">

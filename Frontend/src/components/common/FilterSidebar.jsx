@@ -1,62 +1,70 @@
 import React from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function FilterSidebar({ filters, onLevelChange, onDurationChange, onSubjectChange }) {
+const FilterSidebar = ({ filters, onDifficultyChange, onCategoryChange, onDurationChange, onSubjectChange }) => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-2 font-semibold">Level</h3>
-        <div className="space-y-2">
-          {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-            <div key={level} className="flex items-center space-x-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Filters</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="font-semibold">Difficulty</h3>
+          {["Beginner", "Intermediate", "Advanced"].map(difficulty => (
+            <div key={difficulty} className="flex items-center space-x-2">
               <Checkbox
-                id={level.toLowerCase()}
-                checked={filters.level.includes(level)}
-                onCheckedChange={() => onLevelChange(level)}
+                id={`difficulty-${difficulty}`}
+                checked={filters.difficulty.includes(difficulty)}
+                onCheckedChange={() => onDifficultyChange(difficulty)}
               />
-              <label htmlFor={level.toLowerCase()}>{level}</label>
+              <Label htmlFor={`difficulty-${difficulty}`}>{difficulty}</Label>
             </div>
           ))}
         </div>
-      </div>
 
-      <div>
-        <h3 className="mb-2 font-semibold">Duration</h3>
-        <div className="space-y-2">
-          {['2-3 hours', '4-6 hours', '6-8 hours'].map((duration) => (
+        <div className="space-y-4">
+          <h3 className="font-semibold">Category</h3>
+          {["Programming", "Science", "Technology", "Humanities"].map(category => (
+            <div key={category} className="flex items-center space-x-2">
+              <Checkbox
+                id={`category-${category}`}
+                checked={filters.category.includes(category)}
+                onCheckedChange={() => onCategoryChange(category)}
+              />
+              <Label htmlFor={`category-${category}`}>{category}</Label>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="font-semibold">Duration</h3>
+          {["30", "60", "120"].map(duration => (
             <div key={duration} className="flex items-center space-x-2">
               <Checkbox
-                id={duration.replace(' ', '-')}
+                id={`duration-${duration}`}
                 checked={filters.duration.includes(duration)}
                 onCheckedChange={() => onDurationChange(duration)}
               />
-              <label htmlFor={duration.replace(' ', '-')}>{duration}</label>
+              <Label htmlFor={`duration-${duration}`}>{duration} min</Label>
             </div>
           ))}
         </div>
-      </div>
 
-      <div>
-        <h3 className="mb-2 font-semibold">Subject</h3>
-        <Select onValueChange={onSubjectChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select subject" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="art">Art & Design</SelectItem>
-            <SelectItem value="history">History</SelectItem>
-            <SelectItem value="science">Science</SelectItem>
-            <SelectItem value="technology">Technology</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+        <div className="space-y-4">
+          <h3 className="font-semibold">Course</h3>
+          <Input
+            type="text"
+            placeholder="Search by course"
+            value={filters.subject}
+            onChange={(e) => onSubjectChange(e.target.value)}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
+
+export default FilterSidebar;

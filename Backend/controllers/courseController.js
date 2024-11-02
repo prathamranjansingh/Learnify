@@ -104,3 +104,23 @@ exports.completeVideo = async (req, res) => {
     res.status(500).json({ error: "Failed to complete video" });
   }
 };
+
+// Get details of a specific course
+exports.getCourseDetails = async (req, res) => {
+  try {
+    const { courseId } = req.params; // Extract courseId from parameters
+
+    // Find the course by ID and populate the author field
+    const course = await Course.findById(courseId)
+    
+    // Check if the course exists
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    res.json(course); // Return the course details
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to retrieve course details" });
+  }
+};
