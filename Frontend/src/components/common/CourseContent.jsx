@@ -28,9 +28,17 @@ export default function CourseContent({ course }) {
   }
 
   const getEmbedUrl = (url) => {
-    const videoId = url.split('v=')[1]?.split('&')[0]; // Extract video ID from URL
-    return `https://www.youtube.com/embed/${videoId}`; // Return embed URL
+  let videoId;
+  if (url.includes('youtu.be')) {
+    videoId = url.split('youtu.be/')[1].split('?')[0];
+  } else if (url.includes('v=')) {
+    videoId = url.split('v=')[1].split('&')[0];
+  } else {
+    return null; // Return null if the URL is not a valid YouTube URL
   }
+  return `https://www.youtube.com/embed/${videoId}`;
+}
+
 
   if (!course || !course.videos) {
     return <div>Loading course content...</div>

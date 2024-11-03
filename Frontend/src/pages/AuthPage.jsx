@@ -31,9 +31,8 @@ export default function AuthPage() {
     setError("");
     try {
       const response = await axios.post(`${BACKEND_URL}/users/login`, loginForm);
-      console.log("Login successful", response.data);
-      login({ username: response.data.username, email: response.data.email }); // Store user info in context
-      navigate(location.state?.from || "/dashboard"); // Redirect to previous page or dashboard
+      login(response.data.token); // Store the token instead of user data
+      navigate(location.state?.from || "/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
       console.error("Login error:", err);

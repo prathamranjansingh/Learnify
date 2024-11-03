@@ -2,7 +2,7 @@
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
 const User = require("../models/User"); // Import User model for XP update
-
+const jwt = require('jsonwebtoken');
 // Create course
 exports.createCourse = async (req, res) => {
   try {
@@ -81,21 +81,20 @@ exports.getEnrolledStudents = async (req, res) => {
 // Complete a video and award XP
 exports.completeVideo = async (req, res) => {
   try {
-    const { courseId, videoIndex } = req.params; // Get courseId and videoIndex from params
+    const { courseId, videoIndex } = req.params; 
     const course = await Course.findById(courseId);
 
     if (!course || !course.videos[videoIndex]) {
       return res.status(404).json({ error: "Course or video not found" });
     }
 
-    // Assuming req.user contains the current user
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Increase the user's XP
-    user.xp += course.xpPerVideo; // Increment user's XP by xpPerVideo
+    user.xp += course.xpPerVideo; 
     await user.save();
 
     res.status(200).json({ message: "Video completed", xpEarned: course.xpPerVideo });
@@ -106,21 +105,38 @@ exports.completeVideo = async (req, res) => {
 };
 
 // Get details of a specific course
+// Get details of a specific course
 exports.getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params; // Extract courseId from parameters
 
     // Find the course by ID and populate the author field
-    const course = await Course.findById(courseId)
+    const course = await Course.findById(courseId);
     
     // Check if the course exists
     if (!course) {
       return res.status(404).json({ error: "Course not found" });
     }
 
-    res.json(course); // Return the course details
+    let isEnrolled = false;
+    if (req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with your JWT secret
+      
+      // Check if the user is enrolled
+      isEnrolled = await Enrollment.exists({
+        studentId: decoded.id, // Use the decoded user ID from token
+        courseId: courseId,
+      });
+    }
+
+    // Return the course and enrollment status
+    res.json({ course, isEnrolled });
+
+  
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to retrieve course details" });
   }
 };
+

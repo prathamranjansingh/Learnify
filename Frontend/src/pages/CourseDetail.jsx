@@ -8,34 +8,69 @@ import { Clock } from 'lucide-react'
 import CourseHeader from '@/components/common/CourseHeader'
 import CourseDescription from '@/components/common/CourseDescription'
 import CourseContent from '@/components/common/CourseContent'
+import { useToast } from '@/hooks/use-toast'
 
 export default function CourseDetail() {
   const [course, setCourse] = useState(null)
   const { courseId } = useParams()
+  const { toast } = useToast()
+
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const fetchCourse = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/courses/${courseId}`)
-        setCourse(response.data)
-        console.log(course);
-        
+        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/courses/${courseId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}, // Only add the header if token exists
+        });
+        setCourse(response.data.course);
+        setIsEnrolled(response.data.isEnrolled);
       } catch (error) {
-        console.error('Failed to fetch course:', error)
+        console.error("Error fetching course details", error);
       }
-    }
-    fetchCourse()
-  }, [courseId])
+    };
+
+    fetchCourse();
+  }, [courseId]);
 
   const handleEnroll = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/courses/${courseId}/enroll`)
-      alert('Enrolled successfully!')
+      const token = localStorage.getItem('token'); // Retrieve the JWT token from local storage
+      
+      if (!token) {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "You need to be logged in to enroll.",
+        })
+        return;
+      }
+  
+      await axios.post(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/courses/${courseId}/enroll`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, 
+          },
+        }
+      );
+  
+      toast({
+        title: "Enrolled successfully!",
+        description: "You have successfully enrolled in the course.",
+      })
     } catch (error) {
-      console.error('Failed to enroll:', error)
-      alert('Failed to enroll. Please try again.')
+      console.error('Failed to enroll:', error);
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: "Failed to enroll. Please try again.",
+      })
     }
-  }
+  };
+  
 
   if (!course) return <div>Loading...</div>
 
@@ -60,7 +95,12 @@ export default function CourseDetail() {
                     </p>
                   </div>
                 </div>
-                <Button className="w-full" onClick={handleEnroll}>Enroll Now</Button>
+                {!isEnrolled ? (
+  <Button className="w-full" onClick={handleEnroll}>Enroll Now</Button>
+) : (
+  <Button className="w-full" disabled>Already Enrolled</Button>
+)}
+
               </div>
             </CardContent>
           </Card>

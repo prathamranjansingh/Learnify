@@ -5,6 +5,7 @@ import CourseListing from './pages/CourseListing';
 import CourseDetail from './pages/CourseDetail';
 import AuthPage from './pages/AuthPage';
 import Header from './components/common/Header';
+import { Toaster } from './components/ui/toaster.jsx';
 
 
 function AppContent() {
@@ -28,6 +29,7 @@ function App() {
     <UserProvider>
       <Router>
         <AppContent />
+        <Toaster />
       </Router>
     </UserProvider>
   );

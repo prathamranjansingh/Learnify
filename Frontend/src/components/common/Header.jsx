@@ -13,7 +13,7 @@ export default function Header() {
 
   return (
     <header className="border-b">
-      <div className="container flex h-16 items-center px-4">
+      <div className="container flex h-16 items-center justify-between px-4">
         <a href="/" className="flex items-center gap-2">
           <img
             src="https://via.placeholder.com/32x32"
@@ -35,11 +35,10 @@ export default function Header() {
               </button>
               {showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md p-2">
-                  <p className="text-sm font-medium">Username: {user.username}</p>
-                  <p className="text-sm">Email: {user.email}</p>
+                  
               
                   <div className="mt-2">
-                    <Button variant="ghost" onClick={logout} className="w-full">
+                    <Button variant="destructive" onClick={logout} className="w-full">
                       Log Out
                     </Button>
                   </div>
