@@ -13,6 +13,21 @@ exports.createQuiz = async (req, res) => {
   }
 };
 
+exports.getQuizByCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const quiz = await Quiz.findOne({ courseId });
+
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to retrieve quiz" });
+  }
+};
+
 // Submit quiz and update XP for student
 exports.submitQuiz = async (req, res) => {
   try {
