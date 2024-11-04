@@ -35,6 +35,7 @@ const CourseContent = ({ course }) => {
           config
         );
         setQuiz(response.data.quiz);
+        console.log("User Attempted:", quiz);
         setUserAttempt(response.data.userAttempted);
         
   
@@ -208,49 +209,49 @@ const CourseContent = ({ course }) => {
       </Card>
 
       {quiz && (
-        <Card>
+        <Card className="mt-6">
           <Collapsible
             open={expandedSections.includes('Quiz')}
             onOpenChange={() => toggleSection('Quiz')}
           >
             <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between p-4">
+              <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3">
                   {expandedSections.includes('Quiz') ? (
-                    <ChevronDown className="h-5 w-5" />
+                    <ChevronDown className="h-5 w-5 text-primary" />
                   ) : (
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-5 w-5 text-primary" />
                   )}
                   <div className="text-left">
-                    <h3 className="font-semibold">Course Quiz</h3>
+                    <h3 className="text-lg font-semibold">Course Quiz</h3>
                     <p className="text-sm text-muted-foreground">
-                      {quiz.questions.length} questions
+                      {quiz.questions.length} questions • {quizSubmitted ? 'Completed' : 'Not attempted'}
                     </p>
                   </div>
                 </div>
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <CardContent className="border-t pt-4">
-                <div className="space-y-4">
+              <CardContent className="border-t pt-6">
+                <div className="space-y-6">
                   {quizSubmitted ? (
-                    <div>
-                      <p>You have already submitted this quiz.</p>
-                      <p>Your score: {userAttempt.score} out of {quiz.questions.length * 10}</p>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <p className="font-medium text-green-800">You have already submitted this quiz.</p>
+                      <p className="text-green-700 mt-2">Your score: <span className="font-bold">{quiz.attempts[0].score}</span> out of {quiz.questions.length * 10}</p>
                     </div>
                   ) : (
                     <>
                       {quiz.questions.map((question, index) => (
-                        <div key={question._id} className="space-y-2">
-                          <p className="font-medium">{index + 1}. {question.questionText}</p>
+                        <div key={question._id} className="space-y-3 bg-muted/30 p-4 rounded-lg">
+                          <p className="font-medium text-lg">{index + 1}. {question.questionText}</p>
                           <RadioGroup
                             onValueChange={(value) => setQuizAnswers((prev) => ({ ...prev, [question._id]: value }))}
                             disabled={quizSubmitted}
                           >
                             {question.options.map((option, optionIndex) => (
-                              <div key={optionIndex} className="flex items-center space-x-2">
+                              <div key={optionIndex} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md transition-colors">
                                 <RadioGroupItem value={option} id={`${question._id}-${optionIndex}`} />
-                                <Label htmlFor={`${question._id}-${optionIndex}`}>{option}</Label>
+                                <Label className="flex-grow cursor-pointer" htmlFor={`${question._id}-${optionIndex}`}>{option}</Label>
                               </div>
                             ))}
                           </RadioGroup>
@@ -259,6 +260,7 @@ const CourseContent = ({ course }) => {
                       <Button
                         onClick={handleQuizSubmit}
                         disabled={quizSubmitted}
+                        className="w-full mt-4"
                       >
                         Submit Quiz
                       </Button>

@@ -17,7 +17,6 @@ exports.submitQuiz = async (req, res) => {
     const { quizId, answers } = req.body;
     const userId = req.user.id;
 
-    // Check if the user has already attempted this quiz
     const quiz = await Quiz.findById(quizId);
     const existingAttempt = quiz.attempts.find(attempt => attempt.userId.toString() === userId);
     
@@ -25,17 +24,15 @@ exports.submitQuiz = async (req, res) => {
       return res.status(400).json({ error: "You have already attempted this quiz" });
     }
 
-    // Calculate score
     let score = 0;
     quiz.questions.forEach((question) => {
       if (question.correctAnswer === answers[question._id]) score += 10; // Each correct answer gives 10 XP
     });
 
-    // Add new attempt to attempts array
     quiz.attempts.push({ userId, score });
     await quiz.save();
 
-    // Update user's enrollment with XP
+
     const enrollment = await Enrollment.findOneAndUpdate(
       { studentId: userId, courseId: quiz.courseId },
       { $inc: { xp: score } },
@@ -68,12 +65,13 @@ exports.getQuizByCourse = async (req, res) => {
       console.log("Decoded:", decoded);
 
       const userAttempt = quiz.attempts.find(attempt => attempt.userId.toString() === decoded.id);
-      userAttempted = !!userAttempt;
+      if (userAttempt) {
+        userAttempted = true;
+        userScore = userAttempt.score;
+      }
     }
-
-    console.log("User Attempted:", userAttempted);
     
-    res.json({ quiz, userAttempted });
+    res.json({ quiz, userAttempted, userScore  });
   } catch (error) {
     console.error('Error fetching quiz:', error);
     res.status(500).json({ error: "Failed to fetch quiz" });
