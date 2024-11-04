@@ -9,6 +9,11 @@ const quizSchema = new mongoose.Schema({
       correctAnswer: { type: String, required: true },
     },
   ],
+  attempts: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    score: { type: Number, required: true },
+    submittedAt: { type: Date, default: Date.now }
+  }]
 });
 
 module.exports = mongoose.model("Quiz", quizSchema);

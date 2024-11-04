@@ -1,29 +1,52 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, PlayCircle, PenTool } from "lucide-react";
+import { ChevronDown, ChevronRight, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+
 
 const CourseContent = ({ course }) => {
+  const { toast } = useToast();
   const [activeVideo, setActiveVideo] = useState(null);
   const [expandedSections, setExpandedSections] = useState(['Course Content']);
   const [quiz, setQuiz] = useState(null);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [userAttempt, setUserAttempt] = useState(null);
 
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/quizzes/course/${course._id}`);
-        setQuiz(response.data);
+        const token = localStorage.getItem("token");
+        const config = {
+          headers: {},
+        };
+  
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+  
+        const response = await axios.get(
+          `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/quizzes/course/${course._id}`,
+          config
+        );
+        setQuiz(response.data.quiz);
+        setUserAttempt(response.data.userAttempted);
+        
+  
+  
+        if (response.data.userAttempted) {
+          setQuizSubmitted(true);
+        }
       } catch (error) {
-        console.error('Failed to fetch quiz:', error);
+        console.error("Failed to fetch quiz:", error);
       }
     };
-
+  
     fetchQuiz();
   }, [course._id]);
 
@@ -57,13 +80,62 @@ const CourseContent = ({ course }) => {
     return `https://www.youtube.com/embed/${videoId}`;
   };
 
-  const handleQuizSubmit = () => {
-    setQuizSubmitted(true);
-    const score = quiz.questions.reduce((acc, question) => {
-      return acc + (quizAnswers[question._id] === question.correctAnswer ? 1 : 0);
-    }, 0);
-    alert(`Quiz submitted! You scored ${score} out of ${quiz.questions.length}.`);
+  const handleQuizSubmit = async () => {
+    const token = localStorage.getItem("token");
+    console.log("Token:", token);
+  
+    if (!token) {
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: "You need to be logged in to enroll.",
+      });
+      return;
+    }
+  
+    // Ensure quiz is loaded before trying to access its questions
+    if (!quiz || !quiz.questions) {
+      toast({
+        variant: "destructive",
+        title: "Quiz not found",
+        description: "Please try again later.",
+      });
+      return;
+    }
+  
+    // Prepare the answers object based on user selections
+    const answers = quiz.questions.reduce((acc, question) => {
+      const selectedAnswer = quizAnswers[question._id]; // quizAnswers should map question IDs to answers
+      if (selectedAnswer) {
+        acc[question._id] = selectedAnswer;
+      }
+      return acc;
+    }, {});
+  
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/quizzes/submit`,
+        {
+          quizId: quiz._id, // Ensure quiz._id is correct
+          answers: answers,  // This should now match the expected format
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      setQuizSubmitted(true);
+      setUserAttempt(response.data.attempt);
+      alert(`Quiz submitted! You scored ${response.data.attempt.score} out of ${quiz.questions.length * 10}.`);
+    } catch (error) {
+      console.error('Failed to submit quiz:', error.response?.data || error.message);
+      alert('Failed to submit quiz. Please try again.');
+    }
   };
+  
+  
 
   if (!course || !course.videos) {
     return <div>Loading course content...</div>;
@@ -161,28 +233,37 @@ const CourseContent = ({ course }) => {
             <CollapsibleContent>
               <CardContent className="border-t pt-4">
                 <div className="space-y-4">
-                  {quiz.questions.map((question, index) => (
-                    <div key={question._id} className="space-y-2">
-                      <p className="font-medium">{index + 1}. {question.questionText}</p>
-                      <RadioGroup
-                        onValueChange={(value) => setQuizAnswers((prev) => ({ ...prev, [question._id]: value }))}
+                  {quizSubmitted ? (
+                    <div>
+                      <p>You have already submitted this quiz.</p>
+                      <p>Your score: {userAttempt.score} out of {quiz.questions.length * 10}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {quiz.questions.map((question, index) => (
+                        <div key={question._id} className="space-y-2">
+                          <p className="font-medium">{index + 1}. {question.questionText}</p>
+                          <RadioGroup
+                            onValueChange={(value) => setQuizAnswers((prev) => ({ ...prev, [question._id]: value }))}
+                            disabled={quizSubmitted}
+                          >
+                            {question.options.map((option, optionIndex) => (
+                              <div key={optionIndex} className="flex items-center space-x-2">
+                                <RadioGroupItem value={option} id={`${question._id}-${optionIndex}`} />
+                                <Label htmlFor={`${question._id}-${optionIndex}`}>{option}</Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </div>
+                      ))}
+                      <Button
+                        onClick={handleQuizSubmit}
                         disabled={quizSubmitted}
                       >
-                        {question.options.map((option, optionIndex) => (
-                          <div key={optionIndex} className="flex items-center space-x-2">
-                            <RadioGroupItem value={option} id={`${question._id}-${optionIndex}`} />
-                            <Label htmlFor={`${question._id}-${optionIndex}`}>{option}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  ))}
-                  <Button
-                    onClick={handleQuizSubmit}
-                    disabled={quizSubmitted}
-                  >
-                    Submit Quiz
-                  </Button>
+                        Submit Quiz
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </CollapsibleContent>
