@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import CourseContent from '@/components/common/CourseContent';
 import { useToast } from '@/hooks/use-toast';
 
 export default function CourseDetail() {
+  const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const { courseId } = useParams();
   const { toast } = useToast();
@@ -31,6 +32,11 @@ export default function CourseDetail() {
 
     fetchCourse();
   }, [courseId]);
+
+
+  const handleViewLeaderboard = () => {
+    navigate(`/courses/${courseId}/leaderboard`); // Navigate to leaderboard page for the course
+  };
 
   const handleEnroll = async () => {
     const token = localStorage.getItem('token');
@@ -76,6 +82,7 @@ export default function CourseDetail() {
           <CourseHeader title={course.title} />
           <CourseDescription description={course.description} />
           <CourseContent course={course} />
+          <Button className="mt-10 w-full" onClick={handleViewLeaderboard}>View Leaderboard</Button>
         </div>
         <div className="space-y-6">
           <Card>

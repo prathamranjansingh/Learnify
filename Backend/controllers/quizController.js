@@ -12,6 +12,7 @@ exports.createQuiz = async (req, res) => {
     res.status(500).json({ error: "Failed to create quiz" });
   }
 };
+
 exports.submitQuiz = async (req, res) => {
   try {
     const { quizId, answers } = req.body;
@@ -59,19 +60,23 @@ exports.getQuizByCourse = async (req, res) => {
 
     // Check for the authorization token and if the user has attempted the quiz
     let userAttempted = false;
+    let userScore = 0; // Initialize the userScore variable properly here
     if (req.headers.authorization) {
       const token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log("Decoded:", decoded);
 
+      
       const userAttempt = quiz.attempts.find(attempt => attempt.userId.toString() === decoded.id);
+      console.log(userAttempt);
+      
       if (userAttempt) {
         userAttempted = true;
-        userScore = userAttempt.score;
+        userScore = userAttempt.score; 
       }
     }
-    
-    res.json({ quiz, userAttempted, userScore  });
+
+    res.json({ quiz, userAttempted, userScore });
   } catch (error) {
     console.error('Error fetching quiz:', error);
     res.status(500).json({ error: "Failed to fetch quiz" });

@@ -81,20 +81,37 @@ exports.getEnrolledStudents = async (req, res) => {
 // Complete a video and award XP
 exports.completeVideo = async (req, res) => {
   try {
-    const { courseId, videoIndex } = req.params; 
-    const course = await Course.findById(courseId);
+    const { courseId, videoId } = req.params;
 
-    if (!course || !course.videos[videoIndex]) {
-      return res.status(404).json({ error: "Course or video not found" });
+    // Find the course by courseId
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    
+    
+    const video = course.videos.find(v => v._id.toString() === videoId);
+    if (!video) {
+      return res.status(404).json({ error: "Video not found" });
     }
 
 
+    
+    video.progress = 'completed';
+    
+    // Save the updated course
+    await course.save();
+
+    // Award XP (same as before)
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
+ 
     user.xp += course.xpPerVideo; 
+    console.log(user.xp);
+    
     await user.save();
 
     res.status(200).json({ message: "Video completed", xpEarned: course.xpPerVideo });
@@ -104,8 +121,9 @@ exports.completeVideo = async (req, res) => {
   }
 };
 
-// Get details of a specific course
-// Get details of a specific course
+
+
+
 exports.getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params; // Extract courseId from parameters

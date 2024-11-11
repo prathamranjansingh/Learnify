@@ -6,6 +6,7 @@ import CourseDetail from './pages/CourseDetail';
 import AuthPage from './pages/AuthPage';
 import Header from './components/common/Header';
 import { Toaster } from './components/ui/toaster.jsx';
+import LeaderBoard from './pages/LeaderBoard.jsx';
 
 
 function AppContent() {
@@ -19,6 +20,7 @@ function AppContent() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/" element={<CourseListing />} />
         <Route path="/courses/:courseId" element={<CourseDetail />} />
+        <Route path="/courses/:courseId/leaderboard" element={<LeaderBoard />} />
       </Routes>
     </>
   );

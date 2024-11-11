@@ -17,39 +17,41 @@ const CourseContent = ({ course }) => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [userAttempt, setUserAttempt] = useState(null);
+  const [userScore, setUserScore] = useState(null);
+const [completedVideos, setCompletedVideos] = useState({});
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const config = {
-          headers: {},
-        };
-  
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-  
-        const response = await axios.get(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/quizzes/course/${course._id}`,
-          config
-        );
-        setQuiz(response.data.quiz);
-        console.log("User Attempted:", quiz);
-        setUserAttempt(response.data.userAttempted);
-        
-  
-  
-        if (response.data.userAttempted) {
-          setQuizSubmitted(true);
-        }
-      } catch (error) {
-        console.error("Failed to fetch quiz:", error);
+useEffect(() => {
+  const fetchQuiz = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: {},
+      };
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
-    };
-  
-    fetchQuiz();
-  }, [course._id]);
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/quizzes/course/${course._id}`,
+        config
+      );
+      setQuiz(response.data.quiz);
+      console.log("User Attempted:", quiz);
+      setUserAttempt(response.data.userAttempted);
+      setUserScore(response.data.userScore);
+
+
+      if (response.data.userAttempted) {
+        setQuizSubmitted(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch quiz:", error);
+    }
+  };
+
+  fetchQuiz();
+}, [course._id]);
 
   const toggleSection = (sectionTitle) => {
     setExpandedSections((prev) =>
@@ -61,14 +63,38 @@ const CourseContent = ({ course }) => {
 
   const handleCompleteVideo = async (videoIndex) => {
     try {
-      const response = await axios.post(`/api/courses/${course._id}/complete/${videoIndex}`);
-      alert(`Video completed! You earned ${response.data.xpEarned} XP.`);
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_URL}/courses/${course._id}/videos/${videoIndex}/complete`,
+        {},
+        config
+      );
+      toast({
+        title: "Video completed!",
+        description: `You earned ${response.data.xpEarned} XP.`,
+        variant: "success",
+      });
+
+      // Mark the video as completed
+      setCompletedVideos((prev) => ({
+        ...prev,
+        [videoIndex]: true, // Track video as completed
+      }));
     } catch (error) {
-      console.error('Failed to complete video:', error);
-      alert('Failed to complete video. Please try again.');
+      console.error("Failed to complete video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete video. Please try again.",
+        variant: "destructive",
+      });
     }
   };
-
   const getEmbedUrl = (url) => {
     let videoId;
     if (url.includes('youtu.be')) {
@@ -186,9 +212,10 @@ const CourseContent = ({ course }) => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCompleteVideo(index)}
+                      onClick={() => handleCompleteVideo(video._id)}
+                      disabled={completedVideos[video._id] || video.progress === 'completed'} 
                     >
-                      Complete
+                      {completedVideos[video._id]||video.progress === 'completed' ? 'Completed' : 'Complete'}
                     </Button>
                   </div>
                 ))}
@@ -237,7 +264,7 @@ const CourseContent = ({ course }) => {
                   {quizSubmitted ? (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                       <p className="font-medium text-green-800">You have already submitted this quiz.</p>
-                      <p className="text-green-700 mt-2">Your score: <span className="font-bold">{quiz.attempts[0].score}</span> out of {quiz.questions.length * 10}</p>
+                      <p className="text-green-700 mt-2">Your score: <span className="font-bold">{userScore}</span> out of {quiz.questions.length * 10}</p>
                     </div>
                   ) : (
                     <>

@@ -8,5 +8,6 @@ router.get("/", courseController.getCourses);
 router.post("/:courseId/enroll", protect, courseController.enrollCourse);
 router.get("/:courseId/students", protect, isAdmin, courseController.getEnrolledStudents);
 router.get('/:courseId', courseController.getCourseDetails);
+router.post("/:courseId/videos/:videoId/complete", protect, courseController.completeVideo);
 
 module.exports = router;
