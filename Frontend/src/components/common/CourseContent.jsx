@@ -37,7 +37,6 @@ useEffect(() => {
         config
       );
       setQuiz(response.data.quiz);
-      console.log("User Attempted:", quiz);
       setUserAttempt(response.data.userAttempted);
       setUserScore(response.data.userScore);
 
@@ -81,7 +80,8 @@ useEffect(() => {
         variant: "success",
       });
 
-      // Mark the video as completed
+      console.log("Response: ",response.data);
+      
       setCompletedVideos((prev) => ({
         ...prev,
         [videoIndex]: true, // Track video as completed
