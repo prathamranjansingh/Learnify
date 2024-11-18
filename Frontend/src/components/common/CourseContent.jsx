@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 
 
 const CourseContent = ({ course }) => {
+  console.log("Course ",course);
+  
   const { toast } = useToast();
   const [activeVideo, setActiveVideo] = useState(null);
   const [expandedSections, setExpandedSections] = useState(['Course Content']);
@@ -77,7 +79,6 @@ useEffect(() => {
       toast({
         title: "Video completed!",
         description: `You earned ${response.data.xpEarned} XP.`,
-        variant: "success",
       });
 
       console.log("Response: ",response.data);

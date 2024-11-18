@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Link } from 'react-router-dom';
 const CourseCard = ({ course }) => {
+  
+  
   return (
     <Link to={`/courses/${course._id}`}>
     <Card className="overflow-hidden flex flex-col h-full">
       <div className="aspect-video relative">
-        <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+        <img src={course.imageUrl} alt={course.title} className="w-full h-full object-cover" />
       </div>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">{course.title}</CardTitle>

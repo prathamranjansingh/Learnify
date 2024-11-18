@@ -1,16 +1,28 @@
-// controllers/courseController.js
 const Course = require("../models/Course");
 const Enrollment = require("../models/Enrollment");
-const User = require("../models/User"); // Import User model for XP update
+const User = require("../models/User");
+const UserVideoProgress = require("../models/UserVideoProgress"); // For video progress
 const jwt = require('jsonwebtoken');
-// Create course
+
+// Helper to find course by ID
+async function findCourseById(courseId) {
+  const course = await Course.findById(courseId);
+  if (!course) throw new Error("Course not found");
+  return course;
+}
+
+// Create a new course
 exports.createCourse = async (req, res) => {
   try {
-    const { title, description, videos, duration, category, difficulty, xpPerVideo } = req.body;
-    
-    // Validate the input data
-    if (!title || !videos || videos.length === 0) {
-      return res.status(400).json({ error: "Title and videos are required" });
+    const { title, description, videos, duration, category, difficulty, xpPerVideo, imageUrl } = req.body;
+
+    // Validate input
+    if (!title || !videos || videos.length === 0 || !videos.every(v => v.title && v.url)) {
+      return res.status(400).json({ error: "Title and valid videos are required" });
+    }
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: "Image URL is required" });
     }
 
     const course = await Course.create({
@@ -21,7 +33,8 @@ exports.createCourse = async (req, res) => {
       category,
       difficulty,
       author: req.user.id,
-      xpPerVideo: xpPerVideo || 10, // Default to 10 if not provided
+      xpPerVideo: xpPerVideo ?? 10, // Default value
+      imageUrl, // Add the imageUrl field
     });
 
     res.status(201).json({ message: "Course created", course });
@@ -31,10 +44,17 @@ exports.createCourse = async (req, res) => {
   }
 };
 
-// Get all courses
+
+// Get all courses (with pagination)
 exports.getCourses = async (req, res) => {
   try {
-    const courses = await Course.find().populate("author", "username");
+    const { page = 1, limit = 10 } = req.query;
+
+    const courses = await Course.find()
+      .populate("author", "username")
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
     res.json(courses);
   } catch (error) {
     console.error(error);
@@ -42,18 +62,22 @@ exports.getCourses = async (req, res) => {
   }
 };
 
-// Enroll student in a course
+// Enroll in a course
 exports.enrollCourse = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    // Check if the course exists
-    const course = await Course.findById(courseId);
-    if (!course) {
-      return res.status(404).json({ error: "Course not found" });
+    const course = await findCourseById(courseId);
+
+    // Check if already enrolled
+    const existingEnrollment = await Enrollment.findOne({
+      studentId: req.user.id,
+      courseId,
+    });
+    if (existingEnrollment) {
+      return res.status(400).json({ message: "Already enrolled in this course" });
     }
 
-    // Create an enrollment
     const enrollment = await Enrollment.create({
       studentId: req.user.id,
       courseId,
@@ -66,11 +90,14 @@ exports.enrollCourse = async (req, res) => {
   }
 };
 
-// Get enrolled students for a course (admin only)
+// Get enrolled students for a course
 exports.getEnrolledStudents = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const enrolledStudents = await Enrollment.find({ courseId }).populate("studentId", "username");
+
+    const enrolledStudents = await Enrollment.find({ courseId })
+      .populate("studentId", "username");
+
     res.json(enrolledStudents);
   } catch (error) {
     console.error(error);
@@ -78,40 +105,32 @@ exports.getEnrolledStudents = async (req, res) => {
   }
 };
 
-// Complete a video and award XP
+
 exports.completeVideo = async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
 
-    // Find the course by courseId
-    const course = await Course.findById(courseId);
-    if (!course) {
-      return res.status(404).json({ error: "Course not found" });
-    }
+    const course = await findCourseById(courseId);
 
-    
-    
+
     const video = course.videos.find(v => v._id.toString() === videoId);
     if (!video) {
       return res.status(404).json({ error: "Video not found" });
     }
 
+    // Update video progress
+    const progress = await UserVideoProgress.findOneAndUpdate(
+      { userId: req.user.id, courseId, videoId },
+      { progress: 'completed' },
+      { new: true, upsert: true }
+    );
 
-    
-    video.progress = 'completed';
-    
-    // Save the updated course
-    await course.save();
-
-    // Award XP (same as before)
+    // Award XP to user
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
- 
-    user.xp += course.xpPerVideo; 
-    console.log(user.xp);
-    
+    user.xp += course.xpPerVideo;
     await user.save();
 
     res.status(200).json({ message: "Video completed", xpEarned: course.xpPerVideo });
@@ -122,39 +141,58 @@ exports.completeVideo = async (req, res) => {
 };
 
 
-
-
 exports.getCourseDetails = async (req, res) => {
   try {
-    const { courseId } = req.params; // Extract courseId from parameters
+    const { courseId } = req.params;
 
-    // Find the course by ID and populate the author field
-    const course = await Course.findById(courseId);
-    
-    // Check if the course exists
+    const course = await Course.findById(courseId).populate("author", "username");
     if (!course) {
       return res.status(404).json({ error: "Course not found" });
     }
 
     let isEnrolled = false;
     if (req.headers.authorization) {
-      const token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with your JWT secret
-      
-      // Check if the user is enrolled
-      isEnrolled = await Enrollment.exists({
-        studentId: decoded.id, // Use the decoded user ID from token
-        courseId: courseId,
-      });
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        isEnrolled = await Enrollment.exists({
+          studentId: decoded.id,
+          courseId,
+        });
+      } catch (err) {
+        console.warn("Invalid token", err);
+      }
     }
 
-    // Return the course and enrollment status
-    res.json({ course, isEnrolled });
 
-  
+    let videoCompletionStatus = [];
+    if (req.user) {      
+      for (let video of course.videos) {
+        const progress = await UserVideoProgress.findOne({
+          userId: req.user.id,
+          courseId: req.params,
+          videoId: video._id,
+        });
+
+        videoCompletionStatus.push({
+          videoId: video._id,
+          title: video.title,
+          url: video.url,
+          completed: progress && progress.progress === 'completed',
+        });
+      }
+    }
+
+    
+
+    res.json({
+      course,
+      isEnrolled,
+      videos: videoCompletionStatus,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to retrieve course details" });
   }
 };
-
