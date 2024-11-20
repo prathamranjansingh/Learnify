@@ -145,54 +145,60 @@ exports.getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params;
 
+    // Fetch the course and its author details
     const course = await Course.findById(courseId).populate("author", "username");
     if (!course) {
       return res.status(404).json({ error: "Course not found" });
     }
 
     let isEnrolled = false;
+
+    // Check if the user is authenticated
     if (req.headers.authorization) {
       try {
-        const token = req.headers.authorization.split(' ')[1];
+        const token = req.headers.authorization.split(" ")[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        // Check if the user is enrolled in the course
         isEnrolled = await Enrollment.exists({
           studentId: decoded.id,
           courseId,
         });
+
+        // If the user is enrolled, update the video completion status
+        if (isEnrolled) {
+          const updatedVideos = await Promise.all(
+            course.videos.map(async (video) => {
+              const progress = await UserVideoProgress.findOne({
+                userId: decoded.id,
+                courseId,
+                videoId: video._id,
+              });
+
+              // Explicitly define completed status
+              return {
+                ...video.toObject(),
+                completed: progress?.progress === "completed", // Add the completed property
+              };
+            })
+          );
+
+          course.videos = updatedVideos; // Replace the videos array
+        }
       } catch (err) {
-        console.warn("Invalid token", err);
+        console.warn("Invalid or expired token:", err);
       }
     }
-
-
-    let videoCompletionStatus = [];
-    if (req.user) {      
-      for (let video of course.videos) {
-        const progress = await UserVideoProgress.findOne({
-          userId: req.user.id,
-          courseId: req.params,
-          videoId: video._id,
-        });
-
-        videoCompletionStatus.push({
-          videoId: video._id,
-          title: video.title,
-          url: video.url,
-          completed: progress && progress.progress === 'completed',
-        });
-      }
-    }
-
-    
 
     res.json({
-      course,
+      course: {
+        ...course.toObject(), // Convert the Mongoose document to a plain object
+        videos: course.videos, // Updated videos with `completed` status
+      },
       isEnrolled,
-      videos: videoCompletionStatus,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error retrieving course details:", error);
     res.status(500).json({ error: "Failed to retrieve course details" });
   }
 };

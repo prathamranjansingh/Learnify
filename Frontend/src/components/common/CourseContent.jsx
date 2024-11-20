@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 
 const CourseContent = ({ course }) => {
-  console.log("Course ",course);
+  console.log("course",course);
   
   const { toast } = useToast();
   const [activeVideo, setActiveVideo] = useState(null);
