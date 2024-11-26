@@ -153,48 +153,59 @@ exports.getCourseDetails = async (req, res) => {
 
     let isEnrolled = false;
 
-    // Check if the user is authenticated
-    if (req.headers.authorization) {
+    // Initialize updatedVideos to hold completion status
+    let updatedVideos = course.videos;
+
+    if (req.headers.authorization) {    
       try {
         const token = req.headers.authorization.split(" ")[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+        console.log(decoded);
+        
         // Check if the user is enrolled in the course
-        isEnrolled = await Enrollment.exists({
+        const enrollment = await Enrollment.findOne({
           studentId: decoded.id,
           courseId,
         });
 
+
+        isEnrolled = !enrollment;
+        console.log(isEnrolled);
+        
         // If the user is enrolled, update the video completion status
         if (isEnrolled) {
-          const updatedVideos = await Promise.all(
+          updatedVideos = await Promise.all(
             course.videos.map(async (video) => {
+              // Convert video to a plain object to add properties
+              const videoObject = video.toObject();
+
+              // Check video progress
               const progress = await UserVideoProgress.findOne({
                 userId: decoded.id,
                 courseId,
                 videoId: video._id,
+                progress: 'completed'
               });
 
-              // Explicitly define completed status
-              return {
-                ...video.toObject(),
-                completed: progress?.progress === "completed", // Add the completed property
-              };
+              // Add completion status
+              videoObject.progress = progress ? 'completed' : 'pending';
+
+              return videoObject;
             })
           );
-
-          course.videos = updatedVideos; // Replace the videos array
         }
       } catch (err) {
         console.warn("Invalid or expired token:", err);
       }
     }
+    
+    const courseResponse = {
+      ...course.toObject(),
+      videos: updatedVideos
+    };
 
     res.json({
-      course: {
-        ...course.toObject(), // Convert the Mongoose document to a plain object
-        videos: course.videos, // Updated videos with `completed` status
-      },
+      course: courseResponse,
       isEnrolled,
     });
   } catch (error) {

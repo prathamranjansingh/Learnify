@@ -24,6 +24,8 @@ export default function CourseDetail() {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         setCourse(response.data.course);
+        console.log("response",response.data.course);
+        
         setIsEnrolled(response.data.isEnrolled);
       } catch (error) {
         console.error("Error fetching course details", error);
