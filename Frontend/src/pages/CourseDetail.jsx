@@ -99,7 +99,7 @@ export default function CourseDetail() {
                     </p>
                   </div>
                 </div>
-                {!isEnrolled ? (
+                {isEnrolled ? (
                   <Button className="w-full" onClick={handleEnroll}>Enroll Now</Button>
                 ) : (
                   <Button className="w-full" disabled>Already Enrolled</Button>

@@ -63,11 +63,11 @@ exports.getQuizByCourse = async (req, res) => {
     if (req.headers.authorization) {
       const token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("Decoded:", decoded);
+    
 
       
       const userAttempt = quiz.attempts.find(attempt => attempt.userId.toString() === decoded.id);
-      console.log(userAttempt);
+    
       
       if (userAttempt) {
         userAttempted = true;

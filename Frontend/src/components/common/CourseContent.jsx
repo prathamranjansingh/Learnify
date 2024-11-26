@@ -151,7 +151,6 @@ const CourseContent = ({ course }) => {
         }
       );
   
-      // Ensure state updates are made before any alerts or toasts
       setQuizSubmitted(true);
       setUserAttempt(response.data.attempt);
       setUserScore(response.data.attempt.score);

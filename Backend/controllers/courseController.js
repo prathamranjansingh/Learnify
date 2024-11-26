@@ -157,14 +157,17 @@ exports.getCourseDetails = async (req, res) => {
       try {
         const token = req.headers.authorization.split(" ")[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+        
+        
         const enrollment = await Enrollment.findOne({
           studentId: decoded.id,
           courseId,
         });
+        
 
+        if(enrollment!=null)
+        isEnrolled = !isEnrolled;
 
-        isEnrolled = !enrollment;
 
         if (isEnrolled) {
           updatedVideos = await Promise.all(
@@ -190,12 +193,12 @@ exports.getCourseDetails = async (req, res) => {
     
     const courseResponse = {
       ...course.toObject(),
-      videos: updatedVideos
+      videos: updatedVideos,
+      isEnrolled
     };
 
     res.json({
       course: courseResponse,
-      isEnrolled,
     });
   } catch (error) {
     console.error("Error retrieving course details:", error);
