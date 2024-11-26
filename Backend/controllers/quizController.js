@@ -1,8 +1,7 @@
-// controllers/quizController.js
 const Quiz = require("../models/Quiz");
 const Enrollment = require("../models/Enrollment");
 const jwt = require("jsonwebtoken");
-// Create a quiz for a course
+
 exports.createQuiz = async (req, res) => {
   try {
     const { courseId, questions } = req.body;

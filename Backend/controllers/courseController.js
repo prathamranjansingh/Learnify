@@ -144,8 +144,6 @@ exports.completeVideo = async (req, res) => {
 exports.getCourseDetails = async (req, res) => {
   try {
     const { courseId } = req.params;
-
-    // Fetch the course and its author details
     const course = await Course.findById(courseId).populate("author", "username");
     if (!course) {
       return res.status(404).json({ error: "Course not found" });
@@ -153,16 +151,13 @@ exports.getCourseDetails = async (req, res) => {
 
     let isEnrolled = false;
 
-    // Initialize updatedVideos to hold completion status
     let updatedVideos = course.videos;
 
     if (req.headers.authorization) {    
       try {
         const token = req.headers.authorization.split(" ")[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log(decoded);
-        
-        // Check if the user is enrolled in the course
+
         const enrollment = await Enrollment.findOne({
           studentId: decoded.id,
           courseId,
@@ -170,16 +165,11 @@ exports.getCourseDetails = async (req, res) => {
 
 
         isEnrolled = !enrollment;
-        console.log(isEnrolled);
-        
-        // If the user is enrolled, update the video completion status
+
         if (isEnrolled) {
           updatedVideos = await Promise.all(
             course.videos.map(async (video) => {
-              // Convert video to a plain object to add properties
               const videoObject = video.toObject();
-
-              // Check video progress
               const progress = await UserVideoProgress.findOne({
                 userId: decoded.id,
                 courseId,
@@ -187,7 +177,6 @@ exports.getCourseDetails = async (req, res) => {
                 progress: 'completed'
               });
 
-              // Add completion status
               videoObject.progress = progress ? 'completed' : 'pending';
 
               return videoObject;

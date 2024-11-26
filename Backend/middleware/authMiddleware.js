@@ -1,9 +1,8 @@
-// middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const Admin = require("../models/Admin"); // Import the Admin model if necessary
+const Admin = require("../models/Admin"); 
 
-// Middleware to protect routes
+
 exports.protect = async (req, res, next) => {
   let token;
 
@@ -26,10 +25,9 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Middleware to check if user is an admin
+
 exports.isAdmin = (req, res, next) => {
-    // If req.user is an instance of Admin, it's an admin user
-    if (req.user instanceof Admin) {
+    if (req.user instanceof Admin) {      
       return next();
     }
     res.status(403).json({ message: "Access denied" });
