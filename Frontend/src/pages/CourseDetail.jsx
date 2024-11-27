@@ -24,9 +24,9 @@ export default function CourseDetail() {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         setCourse(response.data.course);
-        console.log("response",response.data.course);
+        console.log("IsEnrolled",response.data.course.isEnrolled);
         
-        setIsEnrolled(response.data.isEnrolled);
+        setIsEnrolled(response.data.course.isEnrolled);
       } catch (error) {
         console.error("Error fetching course details", error);
       }
@@ -99,7 +99,7 @@ export default function CourseDetail() {
                     </p>
                   </div>
                 </div>
-                {isEnrolled ? (
+                {!isEnrolled ? (
                   <Button className="w-full" onClick={handleEnroll}>Enroll Now</Button>
                 ) : (
                   <Button className="w-full" disabled>Already Enrolled</Button>

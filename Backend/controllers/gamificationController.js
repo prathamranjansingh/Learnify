@@ -1,7 +1,6 @@
-// controllers/gamificationController.js
 const Enrollment = require("../models/Enrollment");
 
-// Award XP for completing course or quiz
+
 exports.awardXP = async (req, res) => {
   try {
     const { enrollmentId, xp } = req.body;
@@ -16,7 +15,7 @@ exports.awardXP = async (req, res) => {
   }
 };
 
-// Get leaderboard for a course
+
 exports.getLeaderboard = async (req, res) => {
   try {
     const { courseId } = req.params;
