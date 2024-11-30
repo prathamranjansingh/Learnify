@@ -109,37 +109,78 @@ exports.getEnrolledStudents = async (req, res) => {
 exports.completeVideo = async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
+    const userId = req.user.id;
 
-    const course = await findCourseById(courseId);
-
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
 
     const video = course.videos.find(v => v._id.toString() === videoId);
     if (!video) {
       return res.status(404).json({ error: "Video not found" });
     }
 
-    // Update video progress
-    const progress = await UserVideoProgress.findOneAndUpdate(
-      { userId: req.user.id, courseId, videoId },
+
+    const videoProgress = await UserVideoProgress.findOneAndUpdate(
+      { userId, courseId, videoId },
       { progress: 'completed' },
       { new: true, upsert: true }
     );
 
-    // Award XP to user
-    const user = await User.findById(req.user.id);
+   
+    const enrollment = await Enrollment.findOne({ 
+      studentId: userId, 
+      courseId: courseId 
+    });
+
+    if (!enrollment) {
+      return res.status(404).json({ error: "Enrollment not found" });
+    }
+
+
+    const totalVideos = course.videos.length;
+
+
+    const completedVideos = await UserVideoProgress.countDocuments({
+      userId,
+      courseId,
+      progress: 'completed'
+    });
+
+
+    const progressPercentage = Math.round((completedVideos / totalVideos) * 100);
+
+   
+    enrollment.progress = progressPercentage;
+
+   
+    if (progressPercentage === 100) {
+      enrollment.completed = true;
+    }
+
+    
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
     user.xp += course.xpPerVideo;
     await user.save();
+    await enrollment.save();
 
-    res.status(200).json({ message: "Video completed", xpEarned: course.xpPerVideo });
+    res.status(200).json({ 
+      message: "Video completed", 
+      xpEarned: course.xpPerVideo,
+      courseProgress: progressPercentage,
+      courseCompleted: enrollment.completed
+    });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to complete video" });
   }
 };
-
 
 exports.getCourseDetails = async (req, res) => {
   try {
