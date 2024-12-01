@@ -1,5 +1,5 @@
 const Enrollment = require("../models/Enrollment");
-
+const Quiz = require("../models/Quiz")
 
 exports.awardXP = async (req, res) => {
   try {
@@ -20,14 +20,37 @@ exports.getLeaderboard = async (req, res) => {
   try {
     const { courseId } = req.params;
 
-    // Fetch enrollments for the specific course
     const leaderboard = await Enrollment.find({ courseId })
-      .sort({ xp: -1 }) // Sort by xp in descending order
-      .limit(10) // Limit the results to top 10
-      .populate("studentId", "username") // Populate the student details (username)
+      .populate("studentId", "username") 
       .exec();
 
-    res.json(leaderboard);
+    const leaderboardWithScores = await Promise.all(
+      leaderboard.map(async (entry) => {
+        const studentId = entry.studentId._id;
+
+        const quizzes = await Quiz.find({ courseId })
+          .exec();
+
+        let totalScore = 0;
+        quizzes.forEach((quiz) => {
+          const attempt = quiz.attempts.find((attempt) => attempt.userId.toString() === studentId.toString());
+          if (attempt) {
+            totalScore += attempt.score; 
+          }
+        });
+
+        return {
+          ...entry.toObject(),
+          totalScore: totalScore,
+        };
+      })
+    );
+
+    
+    leaderboardWithScores.sort((a, b) => (b.totalScore) - (a.totalScore));
+
+    res.json(leaderboardWithScores);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to retrieve leaderboard" });

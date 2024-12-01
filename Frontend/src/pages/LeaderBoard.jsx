@@ -22,12 +22,12 @@ const LeaderBoard = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching leaderboard:", error);
-        setIsLoading(false); // Stop loading if error occurs
+        setIsLoading(false); 
       }
     };
 
     fetchLeaderboard();
-  }, [courseId]); // Fetch leaderboard data whenever courseId changes
+  }, [courseId]); 
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -60,7 +60,7 @@ const LeaderBoard = () => {
               <TableRow>
                 <TableHead className="w-[100px]">Rank</TableHead>
                 <TableHead>User</TableHead>
-                <TableHead className="text-right">XP</TableHead>
+                <TableHead className="text-right">Score</TableHead>
                 <TableHead className="text-right">Progress</TableHead>
               </TableRow>
             </TableHeader>
@@ -83,7 +83,7 @@ const LeaderBoard = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <Badge variant="secondary" className="font-mono">
-                      {entry.xp.toLocaleString()} XP
+                      {entry.totalScore.toLocaleString()}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
