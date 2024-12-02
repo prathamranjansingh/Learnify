@@ -4,9 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
-const UserVideoProgress = require("../models/UserVideoProgress");
 
-// Register user
 exports.registerUser = async (req, res) => {
   const { username, email, password, role } = req.body;
   try {
@@ -34,90 +32,47 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// Get user data
-exports.getUser = async (req, res) => {
+
+
+exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve user data" });
-  }
-};
+    const userId = req.user.id; 
+   
+    const user = await User.findById(userId).select("username email avatar");
 
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
+    
+    const enrollments = await Enrollment.find({ studentId: userId }).populate("courseId", "title");
 
+    const courses = enrollments.map((enrollment) => ({
+      id: enrollment.courseId._id,
+      name: enrollment.courseId.title,
+      progress: enrollment.progress,
+    }));
 
-exports.getUserDetails = async (userId) => {
-  try {
-    // Fetch user details
-    const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+    // Calculate completed and total courses
+    const completedCourses = courses.filter((course) => course.progress === 100).length;
+    const totalCourses = courses.length;
 
-    // Fetch user's enrolled courses
-    const enrollments = await Enrollment.find({ studentId: userId }).populate("courseId");
-
-    // Prepare enrolled courses data
-    const enrolledCourses = await Promise.all(
-      enrollments.map(async (enrollment) => {
-        const course = enrollment.courseId;
-
-        // Fetch completed video progress for the course
-        const completedVideos = await UserVideoProgress.countDocuments({
-          userId,
-          courseId: course._id,
-          progress: "completed",
-        });
-
-        // Total lectures in the course
-        const totalLectures = course.videos.length;
-
-        return {
-          id: course._id.toString(),
-          title: course.title,
-          instructor: course.author.toString(), // Assuming 'author' is populated with instructor name
-          progress: Math.round((completedVideos / totalLectures) * 100),
-          totalLectures,
-          completedLectures: completedVideos,
-          imageUrl: course.imageUrl,
-        };
-      })
-    );
-
-    // Example calculation of user stats
-    const stats = {
-      totalCoursesEnrolled: enrollments.length,
-      totalHoursLearned: enrolledCourses.reduce((sum, course) => sum + (course.completedLectures * 1), 0), // Assuming 1 hour per lecture
-      averageCourseRating: 4.7, // Placeholder, update based on ratings data
-      certificatesEarned: enrolledCourses.filter((course) => course.progress === 100).length,
-    };
-
-    // Placeholder for recommended courses (can be derived using an algorithm)
-    const recommendedCourses = await Course.find().limit(5).then((courses) =>
-      courses.map((course) => ({
-        id: course._id.toString(),
-        title: course.title,
-        instructor: course.author.toString(), // Assuming 'author' is populated with instructor name
-        progress: 0,
-        totalLectures: course.videos.length,
-        completedLectures: 0,
-        imageUrl: course.imageUrl,
-      }))
-    );
-
-    // Final user data
-    const userData = {
+    // Construct user profile response
+    const userProfile = {
       name: user.username,
       email: user.email,
-      stats,
-      enrolledCourses,
-      recommendedCourses,
+      avatar: user.avatar,
+      completedCourses,
+      totalCourses,
+      courses,
     };
 
-    return userData;
+    res.json(userProfile);
   } catch (error) {
-    console.error("Error fetching user details:", error.message);
-    throw error;
+    res.status(500).json({ error: "Failed to fetch user profile" });
   }
 };
+
+
 
 

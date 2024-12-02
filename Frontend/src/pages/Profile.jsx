@@ -1,28 +1,44 @@
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Progress } from '@/components/ui/progress';
-
-// Mock user data
-const user = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  avatar: "https://via.placeholder.com/100",
-  completedCourses: 2,
-  totalCourses: 5,
-};
-
-// Mock course data
-const courses = [
-  { id: 1, name: "Introduction to React", progress: 100 },
-  { id: 2, name: "Advanced JavaScript", progress: 100 },
-  { id: 3, name: "Node.js Fundamentals", progress: 60 },
-  { id: 4, name: "CSS Mastery", progress: 30 },
-  { id: 5, name: "Python for Beginners", progress: 0 },
-];
+import { Progress } from "@/components/ui/progress";
 
 const ProfilePage = () => {
-  const completionPercentage = (user.completedCourses / user.totalCourses) * 100;
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, 
+        },
+      });
+      setUserProfile(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      setError("Failed to load profile data.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center py-8">Loading profile...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center py-8 text-red-500">{error}</p>;
+  }
+
+  const { name, email, avatar, completedCourses, totalCourses, courses } = userProfile;
+  const completionPercentage = (completedCourses / totalCourses) * 100;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -33,14 +49,14 @@ const ProfilePage = () => {
           </CardHeader>
           <CardContent className="flex items-center space-x-4">
             <img
-              src={user.avatar}
-              alt={user.name}
+              src={avatar || "https://via.placeholder.com/100"}
+              alt={name}
               className="w-24 h-24 rounded-full"
             />
             <div>
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <p className="text-gray-500">{user.email}</p>
-              {user.completedCourses > 0 && (
+              <h2 className="text-2xl font-bold">{name}</h2>
+              <p className="text-gray-500">{email}</p>
+              {completedCourses > 0 && (
                 <Badge className="mt-2" variant="secondary">
                   Course Completer
                 </Badge>
@@ -59,7 +75,7 @@ const ProfilePage = () => {
             </div>
             <Progress value={completionPercentage} className="w-full" />
             <p className="mt-2 text-sm text-gray-500">
-              {user.completedCourses} out of {user.totalCourses} courses completed
+              {completedCourses} out of {totalCourses} courses completed
             </p>
           </CardContent>
         </Card>
@@ -87,4 +103,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-
