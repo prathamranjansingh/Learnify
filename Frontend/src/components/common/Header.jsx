@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function Header() {
+  const token = localStorage.getItem("token");
   const { user, logout } = useUser(); 
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function Header() {
   };
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+  }, token);
   if (loading) {
     return <p className="text-center py-8">Loading profile...</p>;
   }
@@ -45,12 +46,8 @@ export default function Header() {
     <header className="border-b">
       <div className="container flex h-16 items-center justify-between px-4">
         <a href="/" className="flex items-center gap-2">
-          <img
-            src="https://via.placeholder.com/32x32"
-            alt="Class Central Logo"
-            className="h-8 w-8"
-          />
-          <span className="text-xl font-bold">Class Central</span>
+          
+          <span className="text-xl font-bold">Cambridge Institution</span>
         </a>
         
         <nav className="ml-auto flex gap-4 items-center">
