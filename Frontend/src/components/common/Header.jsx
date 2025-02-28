@@ -1,4 +1,3 @@
-// src/components/Header.js
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext"; 
@@ -49,11 +48,11 @@ export default function Header() {
       <div className="container flex h-16 items-center justify-between px-4">
         <a href="/" className="flex items-center gap-2">
           <img
-            src="https://via.placeholder.com/32x32"
-            alt="Class Central Logo"
+            src="https://facultytub.com/wp-content/uploads/2024/03/cit.png"
+            alt="Cambridge Logo"
             className="h-8 w-8"
           />
-          <span className="text-xl font-bold">Class Central</span>
+          <span className="text-xl font-bold">Cambridge</span>
         </a>
         
         <nav className="ml-auto flex gap-4 items-center">
