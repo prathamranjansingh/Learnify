@@ -41,7 +41,7 @@ const FilterSidebar = ({ filters, onDifficultyChange, onCategoryChange, onDurati
 
         <div className="space-y-4">
           <h3 className="font-semibold">Duration</h3>
-          {["30", "60", "120"].map(duration => (
+          {["150", "180", "300"].map(duration => (
             <div key={duration} className="flex items-center space-x-2">
               <Checkbox
                 id={`duration-${duration}`}
